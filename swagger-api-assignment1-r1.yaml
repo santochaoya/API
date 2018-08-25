@@ -1,0 +1,508 @@
+swagger: '2.0'
+info:
+  description: ''
+  version: 1.1.0
+  title: Crowdfunding API for SENG365
+basePath: /api/v1
+tags:
+  - name: projects
+    description: All project-related endpoints
+  - name: rewards
+    description: Project rewards
+  - name: users
+    description: Project creators, and backers
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /projects:
+    get:
+      tags:
+        - projects
+      summary: View all current projects
+      parameters:
+        - in: query
+          name: startIndex
+          type: integer
+          description: Number of items to skip defore returing result
+        - in: query
+          name: count
+          type: integer
+          description: Number of items to return
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/ProjectOverview'
+    post:
+      tags:
+        - projects
+      summary: Create project
+      security:
+        - User: []
+      parameters:
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/ProjectData'
+      responses:
+        '201':
+          description: OK
+          schema:
+            type: integer
+            description: Project Id
+        '400':
+          description: Malformed project data
+        '401':
+          description: Unauthorized - create account to create project
+  '/projects/{id}':
+    get:
+      tags:
+        - projects
+      summary: View project details
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the project to view
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ProjectDetails'
+    put:
+      tags:
+        - projects
+      summary: Update project (open/close)
+      security:
+        - User: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the project to update
+          required: true
+        - in: body
+          name: open
+          schema:
+            type: object
+            properties:
+              open:
+                type: boolean
+                description: Whether the project should be open
+          required: true
+      responses:
+        '201':
+          description: OK
+        '400':
+          description: Malformed request
+        '401':
+          description: Unauthorized - create account to update project
+        '403':
+          description: Forbidden - unable to update a project you do not own
+  '/projects/{id}/rewards':
+    get:
+      tags:
+        - rewards
+      summary: View project rewards
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Project id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Reward'
+    put:
+      tags:
+        - rewards
+      summary: Update project rewards
+      security:
+        - User: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the project to update
+          required: true
+        - in: body
+          name: rewards
+          description: Array of project rewards
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Reward'
+      responses:
+        '201':
+          description: OK
+        '400':
+          description: Malformed request
+        '401':
+          description: Unauthorized - create account to update project
+        '403':
+          description: Forbidden - unable to update a project you do not own
+  '/projects/{id}/image':
+    get:
+      tags:
+        - projects
+      summary: View project image
+      produces:
+        - image/png
+        - image/jpeg
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the image
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: file
+    put:
+      tags:
+        - projects
+      summary: Update project image
+      security:
+        - User: []
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the project to update
+          required: true
+        - in: formData
+          name: image
+          type: file
+          format: file
+          description: The image to upload
+      responses:
+        '201':
+          description: OK
+        '400':
+          description: Malformed request
+        '401':
+          description: Unauthorized - create account to update project
+        '403':
+          description: Forbidden - unable to update a project you do not own
+  '/projects/{id}/pledge':
+    post:
+      tags:
+        - projects
+      summary: Pledge an amount to a project
+      security:
+        - User: []
+      parameters:
+        - in: path
+          name: id
+          type: integer
+          description: Id of the project
+          required: true
+        - in: body
+          name: body
+          schema:
+            $ref: '#/definitions/Pledge'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: 'bad user, project, or pledge details'
+        '401':
+          description: Unauthorized - create account to pledge to a project
+        '403':
+          description: Forbidden - cannot pledge to own project - this is fraud!
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create user
+      operationId: createUser
+      parameters:
+        - in: body
+          name: body
+          description: User details
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        '201':
+          description: OK
+          schema:
+            type: integer
+            description: Id of the created user
+  /users/login:
+    post:
+      tags:
+        - users
+      summary: Logs user into the system
+      parameters:
+        - name: username
+          in: query
+          description: The user name for login
+          required: true
+          type: string
+        - name: password
+          in: query
+          description: The password for login in clear text
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/LogInResponse'
+        '400':
+          description: Invalid username/password supplied
+  /users/logout:
+    post:
+      tags:
+        - users
+      summary: Logs out current logged in user session
+      security:
+        - User: []
+      description: ''
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized - already logged out
+  '/users/{id}':
+    get:
+      tags:
+        - users
+      summary: Get user by user id
+      description: ''
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/PublicUser'
+        '400':
+          description: Invalid id supplied
+        '404':
+          description: User not found
+    put:
+      tags:
+        - users
+      summary: Update user
+      security:
+        - User: []
+      description: This can only be done by the logged in user.
+      parameters:
+        - name: id
+          in: path
+          description: user id that needs to be updated
+          required: true
+          type: string
+        - in: body
+          name: body
+          description: Updated user object
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        '401':
+          description: Unauthorized - not logged in
+        '403':
+          description: Forbidden - account not owned
+        '404':
+          description: User not found
+    delete:
+      tags:
+        - users
+      summary: Delete user
+      security:
+        - User: []
+      description: This can only be done by the logged in user.
+      parameters:
+        - name: id
+          in: path
+          description: The id that needs to be deleted
+          required: true
+          type: string
+      responses:
+        '200':
+          description: User deleted
+        '401':
+          description: Unauthorized - not logged in
+        '403':
+          description: Forbidden - account not owned
+        '404':
+          description: User not found
+definitions:
+  ProjectOverview:
+    type: object
+    description: >-
+      Used for the GET - projects/ endpoint. This contains a subset of the
+      project data.
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+      subtitle:
+        type: string
+      imageUri:
+        type: string
+  ProjectDetails:
+    type: object
+    description: >-
+      object containing project with dynamic content (backers, progress,
+      rewards)
+    properties:
+      project:
+        $ref: '#/definitions/Project'
+      progress:
+        $ref: '#/definitions/Progress'
+      backers:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: integer
+            amount:
+              type: integer
+  Project:
+    type: object
+    description: 'object containing project, and generated data (creation date, id)'
+    properties:
+      id:
+        type: integer
+      creationDate:
+        type: integer
+      data:
+        $ref: '#/definitions/ProjectData'
+  ProjectData:
+    type: object
+    description: object containing raw project data.
+    required:
+      - title
+      - subtitle
+      - description
+      - creators
+      - target
+    properties:
+      title:
+        type: string
+      subtitle:
+        type: string
+      description:
+        type: string
+      imageUri:
+        type: string
+      target:
+        type: integer
+        description: target amount in cents
+      creators:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+      rewards:
+        type: array
+        items:
+          $ref: '#/definitions/Reward'
+  Progress:
+    type: object
+    description: >-
+      assumptions - we are only dealing with a single currency, money can be
+      represented in cents
+    properties:
+      target:
+        type: integer
+      currentPledged:
+        type: integer
+      numberOfBackers:
+        type: integer
+  Reward:
+    type: object
+    description: a project reward
+    properties:
+      id:
+        type: integer
+        description: id of the reward
+      amount:
+        type: integer
+        description: reward amount in cents
+      description:
+        type: string
+        description: reward description
+  Pledge:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: id of the backer
+      amount:
+        type: integer
+        description: pledge amount in cents
+      anonymous:
+        type: boolean
+        description: hide the username
+      card:
+        $ref: '#/definitions/CreditCard'
+  CreditCard:
+    type: object
+    properties:
+      authToken:
+        type: string
+        description: token
+  User:
+    type: object
+    properties:
+      user:
+        $ref: '#/definitions/PublicUser'
+      password:
+        type: string
+  PublicUser:
+    type: object
+    properties:
+      id:
+        type: integer
+      username:
+        type: string
+      location:
+        type: string
+      email:
+        type: string
+  LogInResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: the id of the logged in user
+      token:
+        type: string
+        description: a token to be used for future calls
+securityDefinitions:
+  User:
+    type: apiKey
+    name: X-Authorization
+    in: header

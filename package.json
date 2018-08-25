@@ -1,0 +1,15 @@
+{
+  "name": "mode-token-jwt",
+  "description": "A crowdfunding API.",
+  "homepage": "http://csse-s365.canterbury.ac.nz:5199",
+  "keywords": ["crowdfunding","API"],
+  "author": "xme14@uclive.ac.nz",
+  "main": "token.js",
+  "version": "0.0.1",
+  "dependencies": {
+    "mysql": "^2.13.0",
+    "express": "^4.15.3",
+    "body-parser": "^1.17.2",
+    "express-session":"^1.15.5"
+    }
+}
